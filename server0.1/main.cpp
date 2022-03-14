@@ -67,9 +67,11 @@ int main(int argc,char* argv[])
     address.sin_addr.s_addr=INADDR_ANY;
     address.sin_port=htons(port);
     bind(listenfd,(struct sockaddr*)&address,sizeof(address));
+    printf("bind complete\n");
 
     //listen
     listen(listenfd,5);
+    printf("listenfd complete\n");
 
     //epoll class 
     epoll_event events[MAXEVENT];
@@ -116,7 +118,9 @@ int main(int argc,char* argv[])
             {
                 if(users[sockfd].read())
                 {
+                    printf("read\n");
                     pool->appendTask(users+sockfd);
+                    
                 }
                 else
                 {
@@ -128,6 +132,7 @@ int main(int argc,char* argv[])
             {
                 if(!users[sockfd].write())
                 {
+                   printf("write\n");
                    users[sockfd].close_conn();
                 }
             }

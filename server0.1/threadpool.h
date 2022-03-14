@@ -109,8 +109,10 @@ void ThreadPool<T>:: run()
         queueLock.unLock();
         if(!request)
         {
+            printf("no-requests\n");
             continue;
         }
+        printf("process a request\n");
         request->process();
     }
 }

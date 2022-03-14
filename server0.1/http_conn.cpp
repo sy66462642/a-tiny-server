@@ -148,9 +148,11 @@ http_conn::HTTP_CODE http_conn::process_read()
         {
             case CHECK_STATE_REQUESTLINE:
             {
-                ret=parse_request_line(text);
-                if(ret=BAD_REQUEST)
+                ret=parse_request_line(text);//Check this code!
+                printf("parserequestline\n");
+                if(ret==BAD_REQUEST)//The question forms!!!!!!!!!!
                 {
+                    printf("BADREQ\n");
                     return BAD_REQUEST;
                 }
                 break;
@@ -159,12 +161,14 @@ http_conn::HTTP_CODE http_conn::process_read()
             case CHECK_STATE_HEADER:
             {
                 ret=parse_headers(text);
-                if(ret=BAD_REQUEST)
+                printf("parseheader\n");
+                if(ret==BAD_REQUEST)
                 {
                     return BAD_REQUEST;
                 }
                 else if(ret==GET_REQUEST)
                 {
+                    printf("\ndoretuests\n");
                     return do_request();
                 }
                 break;
@@ -172,8 +176,10 @@ http_conn::HTTP_CODE http_conn::process_read()
             case CHECK_STATE_CONTENT:
             {
                 ret=parse_content(text);
+                printf("parsecontent\n");
                 if(ret==GET_REQUEST)
                 {
+                    printf("\ndoretuests\n");
                     return do_request();
                 }
                 line_status=lINE_OPEN;
@@ -261,16 +267,18 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
     *m_url++ ='\0';
 
     char * method =text;
+    printf("methodis%s\n",method);//Test the url
     if(strcasecmp(method,"GET")==0)
         m_method=GET;
     else
         return BAD_REQUEST;
     m_version = strpbrk(m_url," \t");
+    printf("m_version %s\n",m_version);
     if(!m_version)
         return BAD_REQUEST;
     
     *m_version++ ='\0';
-    if(strcasecmp(method,"HTTP/1.1")!=0)
+    if(strcasecmp(m_version,"HTTP/1.1")!=0)
     return BAD_REQUEST;
 
     if(strncasecmp(m_url,"http://",7)==0)
@@ -282,7 +290,7 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
     return BAD_REQUEST;
 
     m_check_state =CHECK_STATE_HEADER; //检查请求头
-
+    printf("parseok\n");
     return NO_REQUEST;
 }
 http_conn::HTTP_CODE  http_conn::parse_headers(char *text)
@@ -370,9 +378,10 @@ http_conn::LINE_STATUS http_conn::parse_line()
 http_conn::HTTP_CODE http_conn::do_request()
 {
     strcpy(m_real_file,doc_root);
-    int len =strlen(doc_root);
-    strncpy(m_real_file+len,m_url,FILENAME_LEN -len -1);
-    printf("%s\n",m_real_file);
+    int len =strlen(m_real_file);
+    printf("pre: %s\n",m_real_file);
+    strncpy(m_real_file+len,m_url,FILENAME_LEN);
+    printf("after: %s\n",m_real_file);
     if(stat(m_real_file,&m_file_stat)<0)
     {
         return NO_RESOURCES;
@@ -426,10 +435,11 @@ bool http_conn::read()
         return true;
 
     }
-    return true;
+    return false;
 }
 bool http_conn::write()
 {
+   
    int temp=0;
    int bytes_have_send =0;
    int bytes_to_send =m_write_index;
@@ -483,14 +493,18 @@ void http_conn::process()
     if(read_ret==NO_REQUEST)
     {
         modfd(m_epollfd,m_sockfd,EPOLLIN);
+        printf("NOREQ\n");
         return;
     }
     bool write_ret=process_write(read_ret);
+    printf("write\n");
     if(!write_ret)
     {
         close_conn();
     }
+    printf("contious write\n");
     modfd(m_epollfd,m_sockfd,EPOLLOUT);
+    printf("write process\n");
 
 }
 
